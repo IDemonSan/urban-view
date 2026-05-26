@@ -41,9 +41,9 @@ public class SecurityConfig {
                 .xssProtection(xss -> xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
             )
             
-            // 5. Configurar permisos de acceso a los endpoints públicos del MVP
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/plano", "/api/plano/**").permitAll()
+                .requestMatchers("/actuator/**").permitAll()
                 .anyRequest().authenticated()
             );
 

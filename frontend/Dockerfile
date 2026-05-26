@@ -16,6 +16,7 @@ RUN npm run build
 # ETAPA 2: SERVIDOR ESTATICO (NGINX ALPINE)
 # ==========================================
 FROM nginx:1.25-alpine
+RUN apk add --no-cache curl
 
 # Copiar los recursos compilados estáticos del Stage 1 al directorio de Nginx
 COPY --from=build /app/dist /usr/share/nginx/html

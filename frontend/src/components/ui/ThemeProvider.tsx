@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Theme, ThemeContext } from '../../contexts/ThemeContext';
-import { useFeatureFlag } from '../../config/features';
+import { useFeatureFlag } from '../../hooks/useFeatureFlag';
 
 interface ThemeProviderProps {
   children: React.ReactNode;

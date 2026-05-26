@@ -17,9 +17,10 @@ RUN mvn clean package -DskipTests -B
 # ==========================================
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
+RUN apk add --no-cache curl
 
 # Crear grupo y usuario del sistema no privilegiados 'spring' para hardening de seguridad
-RUN addgroup -g 10001 -S spring && adduser -u 10001 -S spring -G spring
+RUN addgroup -g 1000 -S spring && adduser -u 1000 -S spring -G spring
 
 # Configurar límites de memoria saludables para entornos contenedorizados
 ENV JAVA_OPTS="-XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"

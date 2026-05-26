@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import DashboardStats from './components/DashboardStats';
 import Map from './components/Map';
+import MapViewerV2 from './components/map/MapViewerV2';
 import Sidebar from './components/Sidebar';
 import { LayoutDashboard, Database, HelpCircle, RefreshCw, Layers, ShieldCheck, MapPin } from 'lucide-react';
 import ThemeToggle from './components/ui/ThemeToggle';
+import { useFeatureFlag } from './hooks/useFeatureFlag';
 
 // Obtiene dinámicamente la URL de la API según el entorno de ejecución
 const getApiUrl = () => {
@@ -163,12 +165,20 @@ export default function App() {
         ) : (
           /* Visualizador de Plano e Información */
           <div className="flex-1 flex flex-col lg:flex-row gap-6 items-stretch">
-            {/* Visualizador de Plano SVG */}
-            <Map 
-              elementos={elementos}
-              seleccionado={seleccionado}
-              alSeleccionar={setSeleccionado}
-            />
+            {/* Visualizador de Plano SVG o MapLibre GL */}
+            {useFeatureFlag('enable-maplibre-viewer') ? (
+              <MapViewerV2
+                elementos={elementos}
+                seleccionado={seleccionado}
+                alSeleccionar={setSeleccionado}
+              />
+            ) : (
+              <Map 
+                elementos={elementos}
+                seleccionado={seleccionado}
+                alSeleccionar={setSeleccionado}
+              />
+            )}
 
             {/* Sidebar de Operaciones y Simulador */}
             <Sidebar 
