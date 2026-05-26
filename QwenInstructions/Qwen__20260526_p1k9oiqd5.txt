@@ -1,0 +1,11 @@
+main (production) ← solo merges desde release/*
+├── develop (integración continua)
+│   ├── feature/FE-T1-theme-system
+│   ├── feature/FE-T2-maplibre-viewer
+│   ├── feature/BE-T1-security-hardening
+│   ├── feature/BE-T2-postgis-optimization
+│   └── feature/DB-T1-geom-indexes
+└── release/v1.1.0 (preparación para deploy)
+    ├── chore/changelog-update
+    ├── chore/version-bump
+    └── docs/release-notes

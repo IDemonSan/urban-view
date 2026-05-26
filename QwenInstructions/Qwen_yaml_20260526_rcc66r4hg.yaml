@@ -1,0 +1,91 @@
+task_id: "FE-T2"
+priority: "HIGH"
+estimated_hours: 24
+dependencies: ["FE-T1"]
+feature_flag: "enable-maplibre-viewer"
+
+subtasks:
+  - id: "FE-T2.1"
+    title: "Migrar de Leaflet a MapLibre GL"
+    description: |
+      Crear componente MapViewerV2 usando react-map-gl como wrapper
+      declarativo de MapLibre GL. Mantener API similar al componente
+      actual para facilitar migración progresiva.
+    commands:
+      - "npm install maplibre-gl react-map-gl @types/maplibre-gl"
+      - "mkdir -p src/components/map"
+      - "create src/components/map/MapViewerV2.tsx"
+    acceptance_criteria:
+      - "MapLibre renderiza mapa base sin errores en dev/staging"
+      - "API del componente compatible con uso actual (props similares)"
+      - "Bundle size increment < 150KB gzip"
+    output_artifacts:
+      - "src/components/map/MapViewerV2.tsx"
+      - "src/components/map/types.ts"
+
+  - id: "FE-T2.2"
+    title: "Integrar capa base OpenStreetMap"
+    description: |
+      Configurar source raster con tiles de OSM, con atribución
+      correcta y manejo de errores de carga de tiles.
+    commands:
+      - "update src/config/maps/wms-sources.ts con OSM config"
+      - "add error boundary para tiles fallidos"
+    acceptance_criteria:
+      - "Capa base carga en < 2s con cache de navegador"
+      - "Atribución visible y accesible en esquina inferior"
+      - "Tiles fallback a placeholder si hay error de red"
+    output_artifacts:
+      - "src/config/maps/wms-sources.ts"
+      - "src/components/map/layers/BaseLayer.tsx"
+
+  - id: "FE-T2.3"
+    title: "Añadir capa WMS de ortofotos (PNOA/IGN)"
+    description: |
+      Configurar source WMS con parámetros EPSG:3857 y bbox dinámico.
+      Soportar transparencia ajustable y toggle de visibilidad.
+    sources:
+      spain_pnoa: "https://www.ign.es/wms-inspire/pnoa-ma?"
+      params: "service=WMS&request=GetMap&layers=OI.OrthoimageCoverage&format=image/png&bbox={bbox-epsg-3857}&width=256&height=256&srs=EPSG:3857"
+    commands:
+      - "add WMS config a src/config/maps/wms-sources.ts"
+      - "create src/components/map/layers/OrtofotoLayer.tsx"
+    acceptance_criteria:
+      - "Ortofoto se superpone correctamente con transparencia 0-100%"
+      - "Toggle de capa funciona sin recargar mapa"
+      - "Fallback a capa base si WMS no responde en 10s"
+    output_artifacts:
+      - "src/components/map/layers/OrtofotoLayer.tsx"
+      - "src/hooks/useWMSLayer.ts"
+
+  - id: "FE-T2.4"
+    title: "Implementar controles de mapa accesibles"
+    description: |
+      Controles de zoom, geolocalización y layer switcher con
+      ARIA labels, foco visible y soporte completo de teclado.
+    commands:
+      - "create src/components/map/controls/MapControls.tsx"
+      - "add aria-labels y keyboard handlers"
+    acceptance_criteria:
+      - "Navegación completa por teclado: Tab entre controles"
+      - "Screen reader anuncia función de cada control"
+      - "Foco visible con outline de alto contraste"
+    output_artifacts:
+      - "src/components/map/controls/MapControls.tsx"
+      - "src/components/map/controls/MapControls.test.tsx"
+
+  - id: "FE-T2.5"
+    title: "Optimizar rendimiento de tiles"
+    description: |
+      Implementar lazy loading de capas, debounce en eventos
+      de movimiento, y cache de tiles con localStorage.
+    commands:
+      - "add lodash.debounce para eventos de moveend"
+      - "implementar tile cache con idb-keyval"
+    acceptance_criteria:
+      - "FPS ≥ 30 durante movimiento de mapa en dispositivo medio"
+      - "Time to Interactive < 3s en conexión 3G simulada"
+      - "Cache de tiles reduce requests repetidos en 80%"
+    output_artifacts:
+      - "src/utils/tileCache.ts"
+      - "src/hooks/useMapPerformance.ts"

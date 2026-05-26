@@ -1,0 +1,91 @@
+task_id: "DB-T1"
+priority: "HIGH"
+estimated_hours: 12
+dependencies: []
+feature_flag: "enable-postgis-optimizations"
+
+subtasks:
+  - id: "DB-T1.1"
+    title: "Analizar queries lentas con pg_stat_statements"
+    description: |
+      Habilitar extensión pg_stat_statements, identificar top 10
+      queries por tiempo total y promedio de ejecución.
+    commands:
+      - "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
+      - "run query de análisis: SELECT query, calls, total_exec_time..."
+      - "guardar reporte en reports/db/slow-queries-YYYYMMDD.md"
+    acceptance_criteria:
+      - "Reporte con queries candidatas a optimización + baseline"
+      - "Threshold configurado: queries > 500ms promedio"
+      - "Plan de acción priorizado por impacto/effort"
+    output_artifacts:
+      - "reports/db/slow-queries-YYYYMMDD.md"
+      - "scripts/analyze-slow-queries.sql"
+
+  - id: "DB-T1.2"
+    title: "Crear índices GIST CONCURRENTLY en geometría"
+    description: |
+      Script de migración: CREATE INDEX CONCURRENTLY para evitar
+      locks en tablas de producción durante creación de índice.
+    commands:
+      - "create V2__add_geom_indexes.sql con CONCURRENTLY"
+      - "add ANALYZE parcels post-creación de índice"
+      - "validar con EXPLAIN que índice es usado"
+    acceptance_criteria:
+      - "EXPLAIN muestra Index Scan en lugar de Seq Scan"
+      - "Migración aplicable sin locks prolongados"
+      - "Rollback script disponible y probado en staging"
+    output_artifacts:
+      - "backend/src/main/resources/db/migration/V2__add_geom_indexes.sql"
+      - "scripts/validate-index-usage.sql"
+
+  - id: "DB-T1.3"
+    title: "Evaluar índices BRIN para datasets muy grandes"
+    description: |
+      Para tablas > 10M rows, probar BRIN como complemento a GIST
+      para columnas con correlación espacial/temporal.
+    commands:
+      - "analizar distribución de datos: SELECT ST_Extent(geom)..."
+      - "crear índice BRIN de prueba en columna auxiliar"
+      - "comparar performance vs GIST con pgbench"
+    acceptance_criteria:
+      - "Comparativa: BRIN reduce tamaño de índice 90% con < 10% pérdida"
+      - "Recomendación documentada: usar BRIN solo si tabla > 10M rows"
+      - "Script de creación BRIN preparado pero no aplicado por defecto"
+    output_artifacts:
+      - "reports/db/brin-evaluation-YYYYMMDD.md"
+      - "scripts/create-brin-index.sql (template)"
+
+  - id: "DB-T1.4"
+    title: "Simplificar geometrías para visualización web"
+    description: |
+      Usar ST_SimplifyPreserveTopology(geom, 0.0001) en queries
+      de mapa para reducir payload GeoJSON sin pérdida visual.
+    commands:
+      - "update endpoint GET /api/v1/parcels/map con simplificación"
+      - "parámetro opcional ?simplify=0.0001 para controlar tolerancia"
+      - "benchmark: comparar tamaño response pre/post simplificación"
+    acceptance_criteria:
+      - "Reducción ≥ 50% en tamaño de respuesta GeoJSON"
+      - "Pérdida visual no perceptible en zoom levels web (10-18)"
+      - "Simplificación solo en endpoint de visualización, no en datos maestros"
+    output_artifacts:
+      - "backend/src/main/java/.../controller/ParcelMapController.java"
+      - "docs/GEOMETRY_SIMPLIFICATION.md"
+
+  - id: "DB-T1.5"
+    title: "Configurar work_mem y effective_cache_size"
+    description: |
+      Ajustar parámetros de PostgreSQL según RAM disponible:
+      work_mem = 25% de RAM / max_connections, effective_cache_size = 50-75% RAM.
+    commands:
+      - "consultar RAM del contenedor: docker stats"
+      - "calcular valores recomendados con script"
+      - "aplicar con ALTER SYSTEM + SELECT pg_reload_conf()"
+    acceptance_criteria:
+      - "EXPLAIN ANALYZE muestra reducción en Disk: Spill"
+      - "Cambios aplicados sin restart de PostgreSQL"
+      - "Valores documentados en application-prod.yml"
+    output_artifacts:
+      - "scripts/calculate-postgres-config.sh"
+      - "backend/src/main/resources/application-prod.yml (actualizado)"

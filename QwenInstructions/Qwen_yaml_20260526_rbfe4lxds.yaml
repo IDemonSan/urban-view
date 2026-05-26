@@ -1,0 +1,91 @@
+task_id: "FE-T1"
+priority: "HIGH"
+estimated_hours: 16
+dependencies: []
+feature_flag: "enable-new-theme"
+
+subtasks:
+  - id: "FE-T1.1"
+    title: "Definir tokens CSS para colores"
+    description: |
+      Crear src/styles/tokens.css con variables CSS custom properties
+      para colores primarios, secundarios, fondo, texto, estados.
+      Incluir pares validados para contraste WCAG 2.2 AA.
+    commands:
+      - "mkdir -p src/styles"
+      - "touch src/styles/tokens.css"
+      - "npm run theme:validate -- --file=src/styles/tokens.css"
+    acceptance_criteria:
+      - "Tokens documentados en Storybook con ejemplos light/dark"
+      - "Script de validación reporta 0 errores de contraste"
+    output_artifacts:
+      - "src/styles/tokens.css"
+      - "src/config/tokens.json"
+
+  - id: "FE-T1.2"
+    title: "Configurar Tailwind para multi-tema"
+    description: |
+      Actualizar tailwind.config.js para usar CSS variables
+      como fuente de colores, habilitando darkMode: 'class'.
+      Mantener compatibilidad con clases legacy usando prefijo.
+    commands:
+      - "npm install -D @tailwindcss/forms class-variance-authority"
+      - "update tailwind.config.js con theme.extend.colors usando css variables"
+    acceptance_criteria:
+      - "tailwind.config.js genera utilidades para ambos temas"
+      - "Clases legacy con prefijo 'legacy-' funcionan sin cambios"
+    output_artifacts:
+      - "tailwind.config.js"
+      - "src/styles/tailwind-theme.ts"
+
+  - id: "FE-T1.3"
+    title: "Implementar hook useTheme()"
+    description: |
+      Crear hook React con contexto para gestionar tema.
+      Soportar: localStorage, prefers-color-scheme, toggle manual.
+      Exportar legacyMode para componentes no migrados.
+    commands:
+      - "mkdir -p src/hooks src/contexts"
+      - "create src/contexts/ThemeContext.tsx"
+      - "create src/hooks/useTheme.ts"
+    acceptance_criteria:
+      - "Cambio de tema sin recarga de página"
+      - "Persistencia entre sesiones con localStorage"
+      - "Hook exporta { theme, toggleTheme, legacyMode }"
+    output_artifacts:
+      - "src/contexts/ThemeContext.tsx"
+      - "src/hooks/useTheme.ts"
+      - "src/components/ui/ThemeProvider.tsx"
+
+  - id: "FE-T1.4"
+    title: "Validar contraste WCAG 2.2 AA"
+    description: |
+      Integrar axe-core en tests E2E y crear script de validación
+      de tokens para asegurar ratio ≥ 4.5:1 (texto normal).
+    commands:
+      - "npm install -D axe-core @axe-core/playwright"
+      - "create scripts/validate-contrast.mjs"
+      - "add npm script: validate:a11y"
+    acceptance_criteria:
+      - "Script validate:a11y reporta 0 errores de contraste"
+      - "Tests E2E incluyen axe.run() en rutas críticas"
+    output_artifacts:
+      - "scripts/validate-contrast.mjs"
+      - "e2e/a11y/contrast.spec.ts"
+
+  - id: "FE-T1.5"
+    title: "Toggle de tema accesible"
+    description: |
+      Componente ThemeToggle con aria-label, foco visible,
+      soporte teclado (Enter/Space), y animación suave.
+    commands:
+      - "mkdir -p src/components/ui"
+      - "create src/components/ui/ThemeToggle.tsx"
+      - "add tests con React Testing Library"
+    acceptance_criteria:
+      - "Lighthouse Accessibility Score ≥ 95"
+      - "Navegación por teclado: Tab → Enter activa toggle"
+      - "Screen reader anuncia 'Cambiar a modo oscuro/claro'"
+    output_artifacts:
+      - "src/components/ui/ThemeToggle.tsx"
+      - "src/components/ui/ThemeToggle.test.tsx"

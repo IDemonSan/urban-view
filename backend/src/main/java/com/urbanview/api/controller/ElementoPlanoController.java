@@ -3,6 +3,7 @@ package com.urbanview.api.controller;
 import com.urbanview.api.dto.ElementoEstadoDTO;
 import com.urbanview.api.model.ElementoPlano;
 import com.urbanview.api.repository.ElementoPlanoRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,7 +40,7 @@ public class ElementoPlanoController {
     @PutMapping("/{id}/estado")
     public ResponseEntity<?> actualizarEstado(
             @PathVariable UUID id,
-            @RequestBody ElementoEstadoDTO estadoDto) {
+            @Valid @RequestBody ElementoEstadoDTO estadoDto) {
         
         System.out.println("[API] Solicitud PUT /api/plano/" + id + "/estado recibida con estado: " + estadoDto.getEstado());
 

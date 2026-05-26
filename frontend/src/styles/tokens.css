@@ -1,0 +1,44 @@
+/* ==============================================================================
+   DESIGN TOKENS - SYSTEM STYLING - WCAG 2.2 AA COMPLIANT
+   ============================================================================== */
+
+:root {
+  /* --- LIGHT THEME TOKENS --- */
+  --bg-primary: #f8fafc;        /* Slate 50 - Fondo Limpio */
+  --bg-card: rgba(255, 255, 255, 0.75); /* Card Translucida Blanca */
+  --bg-input: #ffffff;
+  --border-color: rgba(15, 23, 42, 0.08); /* Borde sutil oscuro */
+  --text-primary: #0f172a;      /* Slate 900 - Contraste alto con bg-primary (~19:1) */
+  --text-secondary: #475569;    /* Slate 600 - (~6.5:1) - Conforme WCAG AA */
+  --text-muted: #64748b;        /* Slate 500 - (~4.6:1) - Conforme WCAG AA */
+
+  /* Colores de Marca y Estados */
+  --color-indigo-glow: #4f46e5; /* Indigo 600 - Contraste alto con fondo blanco */
+  --color-available: #059669;   /* Emerald 600 - Disponible */
+  --color-sold: #dc2626;        /* Red 600 - Vendido */
+  --color-infrastructure: #64748b; /* Slate 500 */
+}
+
+.dark {
+  /* --- DARK THEME TOKENS --- */
+  --bg-primary: #080b11;        /* Fondo Slate Oscuro Profundo */
+  --bg-card: rgba(17, 24, 39, 0.7); /* Card Translucida Gris */
+  --bg-input: #111827;
+  --border-color: rgba(255, 255, 255, 0.06); /* Borde sutil blanco */
+  --text-primary: #f8fafc;      /* Slate 50 - Contraste alto con bg-primary (~18:1) */
+  --text-secondary: #cbd5e1;    /* Slate 300 - (~11:1) - Conforme WCAG AA */
+  --text-muted: #94a3b8;        /* Slate 400 - (~7.3:1) - Conforme WCAG AA */
+
+  /* Colores de Marca y Estados (Neon con balance en fondo oscuro) */
+  --color-indigo-glow: #6366f1; /* Indigo 500 */
+  --color-available: #10b981;   /* Emerald 500 - Disponible */
+  --color-sold: #f43f5e;        /* Rose 500 - Vendido */
+  --color-infrastructure: #475569; /* Slate 600 */
+}
+
+/* Aplicación Global del Sistema de Temas */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}

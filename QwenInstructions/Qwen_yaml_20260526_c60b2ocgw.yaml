@@ -1,0 +1,22 @@
+description: "Hardening de seguridad en Spring Boot + Docker"
+tools_required:
+  - trivy: "latest"  # Escaneo de vulnerabilidades
+  - owasp-zap: "latest"  # Testing de seguridad
+  - spring-boot-starter-security: "3.2.x"
+
+inputs:
+  - dockerfiles: "Array de paths a Dockerfiles"
+  - endpoints: "Lista de endpoints críticos a proteger"
+
+outputs:
+  - security_report: "reports/security/trivy-scan.json"
+  - hardened_dockerfiles: "Dockerfiles con USER non-root"
+  - security_config: "SecurityConfig.java actualizado"
+
+execution_command: |
+  ./scripts/security-scan.sh --mode=full --output=reports/security/
+
+success_criteria:
+  - "0 vulnerabilidades CRITICAL/HIGH en trivy"
+  - "Contenedores ejecutan como UID != 0"
+  - "OWASP ZAP: 0 alertas de nivel High"

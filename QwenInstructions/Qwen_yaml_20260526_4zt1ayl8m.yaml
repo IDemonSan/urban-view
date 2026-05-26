@@ -1,0 +1,76 @@
+task_id: "BE-T4"
+priority: "HIGH"
+estimated_hours: 14
+dependencies: ["BE-T1", "BE-T2"]
+feature_flag: "enable-ci-quality-gates"
+
+subtasks:
+  - id: "BE-T4.1"
+    title: "Habilitar tests en Dockerfile (eliminar -DskipTests)"
+    description: |
+      Configurar perfil docker-test que ejecuta tests con
+      Testcontainers durante build de imagen Docker.
+    commands:
+      - "update backend/Dockerfile: remover -DskipTests"
+      - "add perfil maven 'docker-test' con Testcontainers"
+      - "configurar fallback: si tests fallan, warning no error"
+    acceptance_criteria:
+      - "Imagen Docker incluye validación básica de contexto"
+      - "Tests de integración ejecutan con DB real en contenedor"
+      - "Build no falla por tests en modo development"
+    output_artifacts:
+      - "backend/Dockerfile (actualizado)"
+      - "backend/pom.xml (perfil docker-test)"
+
+  - id: "BE-T4.2"
+    title: "Añadir tests de carga para endpoints geoespaciales"
+    description: |
+      Usar k6 para simular búsquedas de terrenos con carga
+      progresiva y medir percentiles de respuesta.
+    commands:
+      - "install k6 en CI runner o usar docker run"
+      - "create scripts/load-tests/parcels-search.js"
+      - "configurar thresholds: p95 < 500ms, error rate < 1%"
+    acceptance_criteria:
+      - "Reporte de percentiles: p95 < 500ms para queries espaciales"
+      - "Tests ejecutan en staging, no bloquean CI principal"
+      - "Alertas si thresholds se incumplen en 3 ejecuciones"
+    output_artifacts:
+      - "scripts/load-tests/parcels-search.js"
+      - "reports/performance/load-test-YYYYMMDD.json"
+
+  - id: "BE-T4.3"
+    title: "Implementar contract tests con Pact"
+    description: |
+      Validar compatibilidad frontend-backend sin deploy
+      completo usando Pact para consumer-driven contracts.
+    commands:
+      - "add pact-jvm dependencies en backend y frontend"
+      - "define contracts en backend/src/test/pact/"
+      - "configurar CI para verificar contracts en PRs"
+    acceptance_criteria:
+      - "CI falla si frontend y backend tienen incompatibilidades"
+      - "Contracts versionados y documentados en repo"
+      - "Reporte de cambios de contract disponible en PR"
+    output_artifacts:
+      - "backend/src/test/pact/ (nueva estructura)"
+      - "frontend/pact/ (nueva estructura)"
+      - "docs/CONTRACT_TESTING.md"
+
+  - id: "BE-T4.4"
+    title: "Configurar SonarQube para calidad de código"
+    description: |
+      Integrar análisis estático en pipeline con quality gate
+      para code coverage, bugs, vulnerabilities y code smells.
+    commands:
+      - "add sonar-scanner en GitHub Actions"
+      - "configurar sonar-project.properties"
+      - "quality gate inicial: warning mode para no bloquear"
+    acceptance_criteria:
+      - "Code coverage ≥ 80% en líneas críticas"
+      - "0 bugs críticos, 0 vulnerabilities en SonarQube"
+      - "Reporte de SonarQube disponible en artifacts de CI"
+    output_artifacts:
+      - "sonar-project.properties"
+      - ".github/workflows/backend-ci.yml (actualizado con sonar)"
+      - "docs/QUALITY_GATES.md"

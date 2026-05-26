@@ -1,0 +1,41 @@
+frontend:
+  unit_tests:
+    framework: "Jest + React Testing Library"
+    coverage_target: "80%"
+    focus: "Componentes aislados, hooks, utils"
+  integration_tests:
+    framework: "React Testing Library + MSW"
+    coverage_target: "60%"
+    focus: "Flujos de tema, interacciones de mapa"
+  e2e_tests:
+    framework: "Playwright"
+    coverage_target: "30%"
+    focus: "User journeys críticos: login → search → view"
+
+backend:
+  unit_tests:
+    framework: "JUnit 5 + Mockito"
+    coverage_target: "70%"
+    focus: "Servicios, utilidades, validadores"
+  integration_tests:
+    framework: "Spring Boot Test + Testcontainers"
+    coverage_target: "50%"
+    focus: "API endpoints + DB real + Redis cache"
+  contract_tests:
+    framework: "Pact JVM"
+    coverage_target: "100% de contracts definidos"
+    focus: "Compatibilidad frontend-backend"
+
+database:
+  migration_tests:
+    framework: "Flyway + JUnit"
+    coverage_target: "100% de migraciones"
+    focus: "Aplicación y rollback de cada script"
+  performance_tests:
+    framework: "pgbench + custom scripts"
+    frequency: "semanal en staging"
+    focus: "Queries geoespaciales críticas"
+  recovery_tests:
+    framework: "Manual + scripts automatizados"
+    frequency: "trimestral"
+    focus: "Restore desde backup + validación de datos"

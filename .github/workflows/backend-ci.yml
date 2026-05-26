@@ -1,0 +1,85 @@
+# ==============================================================================
+# GITHUB ACTIONS CI/CD - BACKEND SECURITY HARDENING & TRIVY SCAN
+# ==============================================================================
+name: Backend CI & DevSecOps Hardening Pipeline
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'develop'
+      - 'develop/*'
+      - 'feature/*'
+      - 'release/*'
+  pull_request:
+    branches:
+      - 'main'
+      - 'develop'
+
+jobs:
+  build-and-secure:
+    name: Build, Test & Trivy Vulnerability Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Descargar el código fuente del repositorio
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Configurar el entorno de Java 21
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # 3. Compilar y ejecutar pruebas unitarias con Maven
+      - name: Build and Test with Maven
+        run: |
+          cd backend
+          mvn clean package -B
+
+      # 4. Construir la imagen Docker multi-stage del Backend
+      - name: Build Docker Image
+        run: |
+          cd backend
+          docker build -t urbanview-backend:latest .
+
+      # 5. Crear directorio de reportes
+      - name: Create Report Directory
+        run: mkdir -p reports/security
+
+      # 6. Escanear imagen Docker con Trivy (Configuración Dinámica de Gravedad)
+      # - exit-code 0 (Modo Reporte) para ramas develop, develop/* y features.
+      # - exit-code 1 (Modo Estricto) para ramas main y release/* para impedir deploys inseguros.
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasec/trivy-action@master
+        with:
+          image-ref: 'urbanview-backend:latest'
+          format: 'table'
+          exit-code: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && '1' || '0' }}
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'HIGH,CRITICAL'
+          output: 'reports/security/trivy-report.txt'
+
+      # 7. Generar reporte JSON para almacenamiento de artefactos
+      - name: Generate JSON Report for Artifacts
+        uses: aquasec/trivy-action@master
+        with:
+          image-ref: 'urbanview-backend:latest'
+          format: 'json'
+          exit-code: '0' # Siempre 0 para no romper la generación del artefacto
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'HIGH,CRITICAL'
+          output: 'reports/security/trivy-report.json'
+
+      # 8. Publicar el reporte de seguridad como artefacto en GitHub Actions
+      - name: Upload Security Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-vulnerability-reports
+          path: reports/security/
+          retention-days: 14

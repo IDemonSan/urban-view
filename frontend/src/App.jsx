@@ -3,6 +3,7 @@ import DashboardStats from './components/DashboardStats';
 import Map from './components/Map';
 import Sidebar from './components/Sidebar';
 import { LayoutDashboard, Database, HelpCircle, RefreshCw, Layers, ShieldCheck, MapPin } from 'lucide-react';
+import ThemeToggle from './components/ui/ThemeToggle';
 
 // Obtiene dinámicamente la URL de la API según el entorno de ejecución
 const getApiUrl = () => {
@@ -113,6 +114,7 @@ export default function App() {
 
           {/* Estado de Infraestructura & Conectores */}
           <div className="flex flex-wrap items-center gap-3">
+            <ThemeToggle />
             <button 
               onClick={cargarDatos}
               disabled={cargando}

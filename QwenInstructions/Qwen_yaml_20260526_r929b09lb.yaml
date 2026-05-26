@@ -1,0 +1,91 @@
+task_id: "DB-T2"
+priority: "HIGH"
+estimated_hours: 16
+dependencies: ["DB-T1"]
+feature_flag: "enable-zero-downtime-migrations"
+
+subtasks:
+  - id: "DB-T2.1"
+    title: "Configurar Flyway para migraciones versionadas"
+    description: |
+      Usar naming convention V2__descripcion.sql con checksums,
+      migraciones idempotentes y rollback explícito en comentarios.
+    commands:
+      - "verify flyway config en application.yml"
+      - "create template para nuevas migraciones"
+      - "add validation step en CI: flyway validate"
+    acceptance_criteria:
+      - "flyway info muestra todas las migraciones aplicadas correctamente"
+      - "Checksums validados en cada deploy"
+      - "Template de migración incluye sección de rollback"
+    output_artifacts:
+      - "backend/src/main/resources/db/migration/V__template.sql"
+      - "docs/MIGRATION_TEMPLATE.md"
+
+  - id: "DB-T2.2"
+    title: "Implementar migraciones online para columnas nuevas"
+    description: |
+      Patrón zero-downtime: 1) ADD COLUMN NULL, 2) backfill en batches,
+      3) ADD NOT NULL + DEFAULT. Usar LIMIT/OFFSET o cursor para backfill.
+    commands:
+      - "create script de backfill con batch processing"
+      - "add logging para progreso de backfill"
+      - "validar: 0 rows con NULL no intencional post-migración"
+    acceptance_criteria:
+      - "Migración completada sin downtime perceptible"
+      - "Backfill procesa 1000 rows/batch sin locks prolongados"
+      - "Rollback script revierte cambios de forma segura"
+    output_artifacts:
+      - "scripts/backfill-column.sh"
+      - "backend/src/main/resources/db/migration/V__add_column_online.sql"
+
+  - id: "DB-T2.3"
+    title: "Validar integridad de datos geoespaciales"
+    description: |
+      Añadir constraints: ST_IsValid(geom), ST_SRID(geom) = 4326.
+      Usar NOT VALID inicialmente, luego validar con VALIDATE CONSTRAINT.
+    commands:
+      - "create migration con ALTER TABLE ADD CONSTRAINT ... NOT VALID"
+      - "script separado para VALIDATE CONSTRAINT en ventana de mantenimiento"
+      - "query de auditoría: SELECT COUNT(*) WHERE NOT ST_IsValid(geom)"
+    acceptance_criteria:
+      - "100% de registros cumplen constraints post-validación"
+      - "Constraints en modo NOT VALID no bloquean writes durante backfill"
+      - "Reporte de datos inválidos antes de validación"
+    output_artifacts:
+      - "backend/src/main/resources/db/migration/V__add_geom_constraints.sql"
+      - "scripts/validate-geom-data.sql"
+
+  - id: "DB-T2.4"
+    title: "Preparar rollback automatizado para cada migración"
+    description: |
+      Script rollback_V*.sql que revierte cambios de forma segura:
+      DROP INDEX CONCURRENTLY, ALTER TABLE DROP COLUMN, etc.
+    commands:
+      - "create template para scripts de rollback"
+      - "test rollback en staging con datos de producción anonimizados"
+      - "documentar tiempo estimado de rollback por tipo de cambio"
+    acceptance_criteria:
+      - "Rollback ejecutado en < 5 minutos con 0 pérdida de datos válidos"
+      - "Script de rollback probado en entorno aislado"
+      - "Runbook de rollback documentado paso a paso"
+    output_artifacts:
+      - "backend/src/main/resources/db/rollback/V__template_rollback.sql"
+      - "docs/ROLLBACK_RUNBOOK.md"
+
+  - id: "DB-T2.5"
+    title: "Documentar esquema con comentarios y diagramas"
+    description: |
+      Usar COMMENT ON COLUMN para documentación inline, generar
+      diagrama ER con pgAdmin o SchemaSpy, mantener en docs/.
+    commands:
+      - "add COMMENT ON TABLE/ COLUMN en migraciones"
+      - "run SchemaSpy para generar diagrama HTML"
+      - "commit docs/database/schema.html en repo"
+    acceptance_criteria:
+      - "Nuevo desarrollador puede entender el esquema en < 30 minutos"
+      - "Diagrama actualizado en cada migración de esquema"
+      - "Comentarios visibles en pgAdmin y documentación generada"
+    output_artifacts:
+      - "docs/database/schema.html"
+      - "backend/src/main/resources/db/migration/V__add_comments.sql"
