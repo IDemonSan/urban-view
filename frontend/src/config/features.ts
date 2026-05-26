@@ -60,8 +60,8 @@ export const useFeatureFlag = (flagName: string): boolean => {
 
   const env = getEnvironment();
 
-  // Override por query param en desarrollo (ej: ?flags=enable-new-theme,enable-maplibre-viewer)
-  if (env === 'development') {
+  // Override por query param en desarrollo o si estamos accediendo localmente para demostración
+  if (env === 'development' || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))) {
     if (typeof window !== 'undefined' && window.location) {
       const params = new URLSearchParams(window.location.search);
       if (params.has('flags')) {
