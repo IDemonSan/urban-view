@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # CONTENEDOR 1: BASE DE DATOS GEOCASUAL (PostgreSQL + PostGIS)
+  # ==========================================
+  db-postgis:
+    image: postgis/postgis:15-3.3
+    container_name: db-postgis
+    environment:
+      POSTGRES_DB: urbanview_db
+      POSTGRES_USER_FILE: /run/secrets/db_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_user
+      - db_password
+    volumes:
+      # Persistencia de datos geoespaciales
+      - db_data:/var/lib/postgresql/data
+      # Inicialización automática de esquema y seed data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - red-proptech
+    # Aislado: No se expone públicamente al host para cumplir con seguridad perimetral.
+    # El backend se conecta directamente a través de la red interna de Docker.
+    restart: unless-stopped
+
+  # ==========================================
+  # CONTENEDOR 2: API REST BACKEND (Spring Boot 3)
+  # ==========================================
+  api-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: api-backend
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://db-postgis:5432/urbanview_db
+    secrets:
+      - db_user
+      - db_password
+    depends_on:
+      - db-postgis
+    networks:
+      - red-proptech
+    restart: unless-stopped
+
+  # ==========================================
+  # CONTENEDOR 3: FRONTEND INSTANCIA 1 (Nginx + React)
+  # ==========================================
+  frontend-app-1:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend-app-1
+    ports:
+      - "8081:80"
+    depends_on:
+      - api-backend
+    networks:
+      - red-proptech
+    volumes:
+      # [BIND MOUNT EXCLUSIVO PARA DESARROLLO / HOT-RELOAD]
+      # Permite inyectar cambios en caliente (HMR) mapeando la carpeta local al contenedor.
+      # Para utilizar HMR, se recomienda montar este volumen y cambiar temporalmente el CMD a 'npm run dev'.
+      - ./frontend:/app
+      - /app/node_modules # Previene que los node_modules del Host destruyan el caché del contenedor
+    restart: unless-stopped
+
+  # ==========================================
+  # CONTENEDOR 4: FRONTEND INSTANCIA 2 (Nginx + React - Duplicado de Puerto Rúbrica)
+  # ==========================================
+  frontend-app-2:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend-app-2
+    ports:
+      - "8082:80"
+    depends_on:
+      - api-backend
+    networks:
+      - red-proptech
+    restart: unless-stopped
+
+  # ==========================================
+  # CONTENEDOR 5: PROXY INVERSO & BALANCEADOR DE CARGA (Nginx)
+  # ==========================================
+  nginx-proxy:
+    build:
+      context: ./proxy
+      dockerfile: Dockerfile
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend-app-1
+      - frontend-app-2
+      - api-backend
+    networks:
+      - red-proptech
+    restart: unless-stopped
+
+# ==========================================
+# DECLARACIÓN DE SECRETOS (DOCKER SECRETS NATIVOS)
+# ==========================================
+secrets:
+  db_user:
+    file: ./database/secrets/db_user.txt
+  db_password:
+    file: ./database/secrets/db_password.txt
+
+# ==========================================
+# DECLARACIÓN DE VOLÚMENES Y REDES AISLADAS
+# ==========================================
+volumes:
+  db_data:
+    name: db_data_proptech
+
+networks:
+  red-proptech:
+    name: red_proptech_red
+    driver: bridge
