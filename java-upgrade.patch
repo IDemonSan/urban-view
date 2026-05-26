@@ -1,0 +1,117 @@
+From 4497db8400501c2a929d04c03490422d829c4515 Mon Sep 17 00:00:00 2001
+From: IDemonSan <brandonmikehuertaneyra@gmail.com>
+Date: Mon, 25 May 2026 22:48:53 -0500
+Subject: [PATCH 1/2] chore(java): upgrade project Java version to 21 and add
+ maven-compiler-plugin release
+
+---
+ backend/pom.xml | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/backend/pom.xml b/backend/pom.xml
+index d5702ba..ea075c5 100644
+--- a/backend/pom.xml
++++ b/backend/pom.xml
+@@ -18,7 +18,7 @@
+     <description>PropTech Geospatial Vector Visualization API</description>
+ 
+     <properties>
+-        <java.version>17</java.version>
++        <java.version>21</java.version>
+     </properties>
+ 
+     <dependencies>
+@@ -71,6 +71,15 @@
+                     </excludes>
+                 </configuration>
+             </plugin>
++            <!-- Ensure compilation targets the project Java version -->
++            <plugin>
++                <groupId>org.apache.maven.plugins</groupId>
++                <artifactId>maven-compiler-plugin</artifactId>
++                <version>3.11.0</version>
++                <configuration>
++                    <release>${java.version}</release>
++                </configuration>
++            </plugin>
+         </plugins>
+     </build>
+ </project>
+-- 
+2.54.0.windows.1
+
+
+From af9a016a3bc63ae4620d1048a273533e52c3a75e Mon Sep 17 00:00:00 2001
+From: IDemonSan <brandonmikehuertaneyra@gmail.com>
+Date: Mon, 25 May 2026 22:50:06 -0500
+Subject: [PATCH 2/2] ci(java): add GitHub Actions workflow for Java 21 and
+ toolchains plugin
+
+---
+ .github/workflows/ci-java.yml | 20 ++++++++++++++++++++
+ backend/pom.xml               | 22 ++++++++++++++++++++++
+ 2 files changed, 42 insertions(+)
+ create mode 100644 .github/workflows/ci-java.yml
+
+diff --git a/.github/workflows/ci-java.yml b/.github/workflows/ci-java.yml
+new file mode 100644
+index 0000000..b4f3acc
+--- /dev/null
++++ b/.github/workflows/ci-java.yml
+@@ -0,0 +1,20 @@
++name: CI - Java
++
++on:
++  push:
++    branches: [ main, master, '**/modernize/**' ]
++  pull_request:
++    branches: [ main, master ]
++
++jobs:
++  build:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - name: Set up JDK 21
++        uses: actions/setup-java@v4
++        with:
++          distribution: temurin
++          java-version: '21'
++      - name: Build with Maven
++        run: mvn -B -V -ntp clean verify
+diff --git a/backend/pom.xml b/backend/pom.xml
+index ea075c5..1007967 100644
+--- a/backend/pom.xml
++++ b/backend/pom.xml
+@@ -80,6 +80,28 @@
+                     <release>${java.version}</release>
+                 </configuration>
+             </plugin>
++            <plugin>
++                <groupId>org.apache.maven.plugins</groupId>
++                <artifactId>maven-toolchains-plugin</artifactId>
++                <version>3.1.0</version>
++                <executions>
++                    <execution>
++                        <goals>
++                            <goal>toolchain</goal>
++                        </goals>
++                    </execution>
++                </executions>
++                <configuration>
++                    <toolchains>
++                        <jdk>
++                            <version>21</version>
++                            <provides>
++                                <version>21</version>
++                            </provides>
++                        </jdk>
++                    </toolchains>
++                </configuration>
++            </plugin>
+         </plugins>
+     </build>
+ </project>
+-- 
+2.54.0.windows.1
+
